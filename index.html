@@ -778,16 +778,6 @@ function spawnDemo() {
     ropes.push(new Rope(prev, a, ropeLen * 0.8));
     prev = a;
   }
-  // Bridge between chains
-  let chain1 = anchors.filter(a => a.pinned);
-  let chain2Anchors = anchors.filter(a => a.pinned);
-  if (anchors.length >= 1) {
-    let bridgeA = anchors[0];
-    let bridgeB = anchors[Math.min(5, anchors.length - 1)];
-    if (bridgeA && bridgeB && bridgeA !== bridgeB) {
-      ropes.push(new Rope(bridgeA, bridgeB, ropeLen * 2));
-    }
-  }
   updateStats();
 }
 

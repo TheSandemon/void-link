@@ -200,7 +200,7 @@ canvas {
   <div class="mode-tag" id="mode-display">ANCHOR</div>
   <div style="flex:1"></div>
   <div id="stat-bar">
-    NODES <span id="stat-nodes">0</span> · ROPE <span id="stat-ropes">0</span> · GRAVITY <span id="stat-grav">1.0</span> · PAUSED
+    NODES <span id="stat-nodes">0</span> · ROPE <span id="stat-ropes">0</span> · GRAVITY <span id="stat-grav">1.0</span> · <span id="stat-paused" style="display:none;color:#ff5050">PAUSED</span>
   </div>
 </div>
 
@@ -567,8 +567,8 @@ function resetAll() {
 function updateStats() {
   document.getElementById('stat-nodes').textContent = anchors.length + nodes.length;
   document.getElementById('stat-ropes').textContent = ropes.length;
-  document.getElementById('stat-bar').innerHTML =
-    'NODES <span>' + (anchors.length + nodes.length) + '</span> · ROPES <span>' + ropes.length + '</span> · GRAVITY <span>' + gravity.toFixed(1) + '</span>' + (paused ? ' · <span style="color:#ff5050">PAUSED</span>' : '');
+  document.getElementById('stat-grav').textContent = gravity.toFixed(1);
+  document.getElementById('stat-paused').style.display = paused ? 'inline' : 'none';
 }
 
 // === PHYSICS LOOP ===

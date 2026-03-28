@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOID LINK</title>
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  overflow: hidden;
+  font-family: 'Space Mono', monospace;
+  color: #D4A853;
+  user-select: none;
+}
+canvas {
+  display: block;
+  position: fixed;
+  top: 0; left: 0;
+}
+#hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(10,10,10,0.85);
+  border-bottom: 1px solid rgba(212,168,83,0.2);
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+#hud h1 {
+  font-family: 'Syncopate', sans-serif;
+  font-size: 16px;
+  color: #00ff88;
+  letter-spacing: 4px;
+  text-shadow: 0 0 10px rgba(0,255,136,0.5);
+}
+.mode-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: #0a0a0a;
+  background: #00ff88;
+  padding: 2px 8px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+}
+#tool-panel {
+  position: fixed;
+  left: 16px;
+  top: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+.tool-btn {
+  width: 44px;
+  height: 44px;
+  background: rgba(20,20,20,0.9);
+  border: 1px solid rgba(212,168,83,0.4);
+  color: #D4A853;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.15s;
+  backdrop-filter: blur(8px);
+}
+.tool-btn:hover { border-color: #00ff88; color: #00ff88; box-shadow: 0 0 8px rgba(0,255,136,0.3); }
+.tool-btn.active {
+  background: rgba(0,255,136,0.15);
+  border-color: #00ff88;
+  color: #00ff88;
+  box-shadow: 0 0 12px rgba(0,255,136,0.4);
+}
+.tool-btn .icon { font-size: 16px; }
+.tool-btn .label { font-size: 8px; letter-spacing: 1px; }
+
+#settings-panel {
+  position: fixed;
+  right: 16px;
+  top: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+  background: rgba(10,10,10,0.85);
+  border: 1px solid rgba(212,168,83,0.2);
+  padding: 14px;
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  min-width: 180px;
+}
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.setting-row label {
+  font-size: 9px;
+  color: rgba(212,168,83,0.7);
+  letter-spacing: 1px;
+  display: flex;
+  justify-content: space-between;
+}
+.setting-row label span { color: #00ff88; }
+.setting-row input[type=range] {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+}
+.setting-row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: #00ff88;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0,255,136,0.5);
+}
+.action-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.action-btn {
+  flex: 1;
+  min-width: 70px;
+  padding: 6px 8px;
+  background: rgba(20,20,20,0.9);
+  border: 1px solid rgba(212,168,83,0.3);
+  color: #D4A853;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  cursor: pointer;
+  border-radius: 3px;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+}
+.action-btn:hover { border-color: #00ff88; color: #00ff88; }
+.action-btn.danger { border-color: rgba(255,80,80,0.5); color: rgba(255,80,80,0.8); }
+.action-btn.danger:hover { border-color: #ff5050; color: #ff5050; }
+
+#hint-bar {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10,10,10,0.8);
+  border: 1px solid rgba(212,168,83,0.15);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 9px;
+  color: rgba(212,168,83,0.6);
+  letter-spacing: 1px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+#hint-bar kbd {
+  color: #00ff88;
+  background: rgba(0,255,136,0.1);
+  padding: 1px 5px;
+  border-radius: 2px;
+  margin: 0 2px;
+}
+
+#stat-bar {
+  position: fixed;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  font-size: 9px;
+  color: rgba(212,168,83,0.5);
+  letter-spacing: 1px;
+  z-index: 10;
+  pointer-events: none;
+}
+#stat-bar span { color: #00ff88; }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <h1>VOID LINK</h1>
+  <div class="mode-tag" id="mode-display">ANCHOR</div>
+  <div style="flex:1"></div>
+  <div id="stat-bar">
+    NODES <span id="stat-nodes">0</span> · ROPE <span id="stat-ropes">0</span> · GRAVITY <span id="stat-grav">1.0</span> · PAUSED
+  </div>
+</div>
+
+<div id="tool-panel">
+  <button class="tool-btn active" data-tool="anchor" onclick="setTool('anchor')">
+    <span class="icon">◆</span><span class="label">ANCHOR</span>
+  </button>
+  <button class="tool-btn" data-tool="rope" onclick="setTool('rope')">
+    <span class="icon">〰</span><span class="label">ROPE</span>
+  </button>
+  <button class="tool-btn" data-tool="node" onclick="setTool('node')">
+    <span class="icon">○</span><span class="label">NODE</span>
+  </button>
+  <button class="tool-btn" data-tool="wall" onclick="setTool('wall')">
+    <span class="icon">▬</span><span class="label">WALL</span>
+  </button>
+  <button class="tool-btn" data-tool="grab" onclick="setTool('grab')">
+    <span class="icon">✋</span><span class="label">GRAB</span>
+  </button>
+  <button class="tool-btn" data-tool="delete" onclick="setTool('delete')">
+    <span class="icon">✕</span><span class="label">DELETE</span>
+  </button>
+</div>
+
+<div id="settings-panel">
+  <div class="setting-row">
+    <label>GRAVITY <span id="grav-val">1.0</span></label>
+    <input type="range" min="0" max="3" step="0.1" value="1" id="grav-slider" oninput="updateGravity(this.value)">
+  </div>
+  <div class="setting-row">
+    <label>STIFFNESS <span id="stiff-val">0.8</span></label>
+    <input type="range" min="0.1" max="1" step="0.05" value="0.8" id="stiff-slider" oninput="updateStiffness(this.value)">
+  </div>
+  <div class="setting-row">
+    <label>DAMPING <span id="damp-val">0.98</span></label>
+    <input type="range" min="0.8" max="1" step="0.01" value="0.98" id="damp-slider" oninput="updateDamping(this.value)">
+  </div>
+  <div class="setting-row">
+    <label>ROPE LENGTH <span id="len-val">60</span></label>
+    <input type="range" min="20" max="200" step="5" value="60" id="len-slider" oninput="updateRopeLen(this.value)">
+  </div>
+  <div class="setting-row">
+    <label>SUBSTEPS <span id="sub-val">8</span></label>
+    <input type="range" min="1" max="16" step="1" value="8" id="sub-slider" oninput="updateSubsteps(this.value)">
+  </div>
+  <div class="action-row">
+    <button class="action-btn" onclick="clearAll()">CLEAR</button>
+    <button class="action-btn danger" onclick="resetAll()">RESET</button>
+  </div>
+</div>
+
+<div id="hint-bar">
+  <kbd>CLICK</kbd> place anchor/node &nbsp;|&nbsp;
+  <kbd>DRAG</kbd> rope between anchors &nbsp;|&nbsp;
+  <kbd>G</kbd> grab &nbsp;|&nbsp;
+  <kbd>DEL</kbd> delete &nbsp;|&nbsp;
+  <kbd>SPACE</kbd> pause &nbsp;|&nbsp;
+  <kbd>R</kbd> reset
+</div>
+
+<script>
+// === CANVAS SETUP ===
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// === STATE ===
+let tool = 'anchor';
+let paused = false;
+let gravity = 1.0;
+let stiffness = 0.8;
+let damping = 0.98;
+let ropeLen = 60;
+let substeps = 8;
+let mouse = { x: 0, y: 0, px: 0, py: 0, down: false };
+let dragged = null;
+let hovered = null;
+let ropeStart = null;
+
+let nodes = [];
+let anchors = [];
+let ropes = [];
+let walls = [];
+let nodeIdCounter = 0;
+
+const GRAV = 0.4;
+
+// === VERLET PHYSICS ===
+class Node {
+  constructor(x, y, pinned = false) {
+    this.id = nodeIdCounter++;
+    this.x = x; this.y = y;
+    this.px = x; this.py = y;
+    this.pinned = pinned;
+    this.mass = 1;
+    this.fx = 0; this.fy = 0;
+    this.radius = pinned ? 8 : 5;
+    this.color = pinned ? '#D4A853' : '#00ff88';
+  }
+  update() {
+    if (this.pinned) return;
+    let vx = (this.x - this.px) * damping;
+    let vy = (this.y - this.py) * damping;
+    this.px = this.x; this.py = this.y;
+    this.x += vx;
+    this.y += vy + GRAV * gravity;
+    this.x += this.fx; this.y += this.fy;
+    this.fx = 0; this.fy = 0;
+    // boundary
+    if (this.x < 0) { this.x = 0; this.px = this.x + vx * 0.5; }
+    if (this.x > W) { this.x = W; this.px = W + vx * 0.5; }
+    if (this.y < 0) { this.y = 0; this.py = this.y + vy * 0.5; }
+    if (this.y > H) { this.y = H; this.py = H + vy * 0.5; }
+  }
+}
+
+class Rope {
+  constructor(a, b, len) {
+    this.a = a;
+    this.b = b;
+    this.len = len || Math.hypot(b.x - a.x, b.y - a.y);
+    this.color = '#00ff88';
+    this.glow = true;
+  }
+  solve() {
+    let dx = this.b.x - this.a.x;
+    let dy = this.b.y - this.a.y;
+    let dist = Math.hypot(dx, dy) || 0.0001;
+    let diff = (this.len - dist) / dist * stiffness;
+    let offsetX = dx * diff * 0.5;
+    let offsetY = dy * diff * 0.5;
+    if (!this.a.pinned) { this.a.x -= offsetX; this.a.y -= offsetY; }
+    if (!this.b.pinned) { this.b.x += offsetX; this.b.y += offsetY; }
+  }
+}
+
+class Wall {
+  constructor(x1, y1, x2, y2) {
+    this.x1 = x1; this.y1 = y1;
+    this.x2 = x2; this.y2 = y2;
+    this.color = 'rgba(212,168,83,0.6)';
+  }
+  solve() {
+    // Rope-wall collision
+    for (let r of ropes) {
+      this.collideRope(r);
+    }
+    // Node-wall collision
+    for (let n of nodes) {
+      this.collideNode(n);
+    }
+    for (let a of anchors) {
+      this.collideNode(a);
+    }
+  }
+  collideNode(n) {
+    if (n.pinned) return;
+    let dx = this.x2 - this.x1;
+    let dy = this.y2 - this.y1;
+    let len = Math.hypot(dx, dy) || 0.0001;
+    let nx = -dy / len;
+    let ny = dx / len;
+    let t = ((n.x - this.x1) * dx + (n.y - this.y1) * dy) / (len * len);
+    t = Math.max(0, Math.min(1, t));
+    let cx = this.x1 + t * dx;
+    let cy = this.y1 + t * dy;
+    let d = Math.hypot(n.x - cx, n.y - cy);
+    let minD = n.radius + 2;
+    if (d < minD && d > 0) {
+      let push = (minD - d);
+      let px = (n.x - cx) / d * push;
+      let py = (n.y - cy) / d * push;
+      n.x += px; n.y += py;
+      // bounce
+      let dot = (n.x - n.px) * nx + (n.y - n.py) * ny;
+      n.px = n.x + nx * dot * 0.3;
+      n.py = n.y + ny * dot * 0.3;
+    }
+  }
+  collideRope(r) {
+    let dx = this.x2 - this.x1;
+    let dy = this.y2 - this.y1;
+    let len = Math.hypot(dx, dy) || 0.0001;
+    let nx = -dy / len;
+    let ny = dx / len;
+    for (let n of [r.a, r.b]) {
+      if (n.pinned) continue;
+      let t = ((n.x - this.x1) * dx + (n.y - this.y1) * dy) / (len * len);
+      t = Math.max(0, Math.min(1, t));
+      let cx = this.x1 + t * dx;
+      let cy = this.y1 + t * dy;
+      let d = Math.hypot(n.x - cx, n.y - cy);
+      let minD = n.radius + 2;
+      if (d < minD && d > 0) {
+        let push = (minD - d);
+        let px = (n.x - cx) / d * push;
+        let py = (n.y - cy) / d * push;
+        n.x += px; n.y += py;
+      }
+    }
+  }
+}
+
+// === TOOLS ===
+function setTool(t) {
+  tool = t;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-tool="${t}"]`).classList.add('active');
+  document.getElementById('mode-display').textContent = t.toUpperCase();
+  ropeStart = null;
+}
+
+function findNodeAt(x, y, radius = 12) {
+  for (let a of anchors) {
+    if (Math.hypot(a.x - x, a.y - y) < radius + a.radius) return a;
+  }
+  for (let n of nodes) {
+    if (Math.hypot(n.x - x, n.y - y) < radius + n.radius) return n;
+  }
+  return null;
+}
+
+function findWallAt(x, y, radius = 8) {
+  for (let w of walls) {
+    let dx = w.x2 - w.x1;
+    let dy = w.y2 - w.y1;
+    let len = Math.hypot(dx, dy);
+    let t = ((x - w.x1) * dx + (y - w.y1) * dy) / (len * len);
+    t = Math.max(0, Math.min(1, t));
+    let cx = w.x1 + t * dx;
+    let cy = w.y1 + t * dy;
+    if (Math.hypot(x - cx, y - cy) < radius) return w;
+  }
+  return null;
+}
+
+// === MOUSE ===
+canvas.addEventListener('mousemove', e => {
+  mouse.px = mouse.x; mouse.py = mouse.y;
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  if (mouse.down && tool === 'grab' && dragged) {
+    dragged.px = dragged.x - (mouse.x - mouse.px);
+    dragged.py = dragged.y - (mouse.y - mouse.py);
+    dragged.x = mouse.x;
+    dragged.y = mouse.y;
+  }
+  hovered = findNodeAt(mouse.x, mouse.y);
+});
+
+canvas.addEventListener('mousedown', e => {
+  mouse.down = true;
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  mouse.px = mouse.x; mouse.py = mouse.y;
+
+  if (tool === 'grab') {
+    dragged = findNodeAt(mouse.x, mouse.y);
+    if (dragged) {
+      dragged.px = dragged.x;
+      dragged.py = dragged.y;
+    }
+  } else if (tool === 'delete') {
+    let n = findNodeAt(mouse.x, mouse.y);
+    if (n) {
+      // remove associated ropes
+      ropes = ropes.filter(r => r.a !== n && r.b !== n);
+      anchors = anchors.filter(a => a !== n);
+      nodes = nodes.filter(no => no !== n);
+    }
+    let w = findWallAt(mouse.x, mouse.y);
+    if (w) walls = walls.filter(wall => wall !== w);
+  } else if (tool === 'anchor') {
+    let a = new Node(mouse.x, mouse.y, true);
+    anchors.push(a);
+    updateStats();
+  } else if (tool === 'node') {
+    let n = new Node(mouse.x, mouse.y, false);
+    nodes.push(n);
+    updateStats();
+  } else if (tool === 'rope') {
+    let hit = findNodeAt(mouse.x, mouse.y);
+    if (!hit) {
+      // create anchor on the fly
+      let a = new Node(mouse.x, mouse.y, true);
+      anchors.push(a);
+      hit = a;
+      updateStats();
+    }
+    if (ropeStart === null) {
+      ropeStart = hit;
+    } else {
+      if (ropeStart !== hit) {
+        let r = new Rope(ropeStart, hit, ropeLen);
+        ropes.push(r);
+        updateStats();
+      }
+      ropeStart = null;
+    }
+  } else if (tool === 'wall') {
+    if (!window._wallStart) {
+      window._wallStart = { x: mouse.x, y: mouse.y };
+    } else {
+      let ws = window._wallStart;
+      if (Math.hypot(mouse.x - ws.x, mouse.y - ws.y) > 20) {
+        walls.push(new Wall(ws.x, ws.y, mouse.x, mouse.y));
+      }
+      window._wallStart = null;
+    }
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  mouse.down = false;
+  dragged = null;
+});
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  ropeStart = null;
+  window._wallStart = null;
+});
+
+// Keyboard
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); paused = !paused; updateStats(); }
+  if (e.code === 'KeyR') resetAll();
+  if (e.code === 'KeyG') setTool('grab');
+  if (e.code === 'KeyD') setTool('delete');
+  if (e.code === 'Escape') { ropeStart = null; window._wallStart = null; }
+  if (e.code === 'Delete' || e.code === 'Backspace') { clearAll(); }
+});
+
+// Settings
+function updateGravity(v) { gravity = parseFloat(v); document.getElementById('grav-val').textContent = v; document.getElementById('stat-grav').textContent = v; }
+function updateStiffness(v) { stiffness = parseFloat(v); document.getElementById('stiff-val').textContent = v; }
+function updateDamping(v) { damping = parseFloat(v); document.getElementById('damp-val').textContent = v; }
+function updateRopeLen(v) { ropeLen = parseInt(v); document.getElementById('len-val').textContent = v; }
+function updateSubsteps(v) { substeps = parseInt(v); document.getElementById('sub-val').textContent = v; }
+
+function clearAll() {
+  nodes = []; anchors = []; ropes = []; walls = [];
+  ropeStart = null;
+  window._wallStart = null;
+  updateStats();
+}
+function resetAll() {
+  clearAll();
+  paused = false;
+  gravity = 1.0; stiffness = 0.8; damping = 0.98; ropeLen = 60; substeps = 8;
+  document.getElementById('grav-slider').value = 1;
+  document.getElementById('stiff-slider').value = 0.8;
+  document.getElementById('damp-slider').value = 0.98;
+  document.getElementById('len-slider').value = 60;
+  document.getElementById('sub-slider').value = 8;
+  updateGravity(1); updateStiffness(0.8); updateDamping(0.98); updateRopeLen(60); updateSubsteps(8);
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('stat-nodes').textContent = anchors.length + nodes.length;
+  document.getElementById('stat-ropes').textContent = ropes.length;
+  document.getElementById('stat-bar').innerHTML =
+    'NODES <span>' + (anchors.length + nodes.length) + '</span> · ROPES <span>' + ropes.length + '</span> · GRAVITY <span>' + gravity.toFixed(1) + '</span>' + (paused ? ' · <span style="color:#ff5050">PAUSED</span>' : '');
+}
+
+// === PHYSICS LOOP ===
+function physics() {
+  if (paused) return;
+  for (let s = 0; s < substeps; s++) {
+    for (let n of [...anchors, ...nodes]) n.update();
+    for (let r of ropes) r.solve();
+    for (let w of walls) w.solve();
+    // node-node repulsion
+    let all = [...anchors, ...nodes];
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        let a = all[i], b = all[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let dist = Math.hypot(dx, dy) || 0.001;
+        let minD = a.radius + b.radius + 4;
+        if (dist < minD && dist > 0) {
+          let push = (minD - dist) * 0.3;
+          let nx = dx / dist, ny = dy / dist;
+          if (!a.pinned) { a.x -= nx * push; a.y -= ny * push; }
+          if (!b.pinned) { b.x += nx * push; b.y += ny * push; }
+        }
+      }
+    }
+  }
+}
+
+// === RENDERING ===
+let time = 0;
+function draw() {
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = 'rgba(212,168,83,0.04)';
+  ctx.lineWidth = 1;
+  let gridSize = 50;
+  for (let x = 0; x < W; x += gridSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += gridSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // walls
+  ctx.lineCap = 'round';
+  for (let w of walls) {
+    ctx.strokeStyle = 'rgba(212,168,83,0.6)';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(212,168,83,0.2)';
+    ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
+  }
+
+  // ropes
+  for (let r of ropes) {
+    ctx.strokeStyle = r.color;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = r.color;
+    ctx.beginPath();
+    ctx.moveTo(r.a.x, r.a.y);
+    ctx.lineTo(r.b.x, r.b.y);
+    ctx.stroke();
+    // mid-point sag visualization
+    let mx = (r.a.x + r.b.x) / 2;
+    let my = (r.a.y + r.b.y) / 2;
+    let dist = Math.hypot(r.b.x - r.a.x, r.b.y - r.a.y);
+    if (dist > r.len * 1.05) {
+      // sagging - draw a curve
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(r.a.x, r.a.y);
+      ctx.quadraticCurveTo(mx + (r.a.y - r.b.y) * 0.2, my + Math.abs(dist - r.len) * 0.3, r.b.x, r.b.y);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  // rope being drawn
+  if (tool === 'rope' && ropeStart) {
+    ctx.strokeStyle = 'rgba(0,255,136,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(ropeStart.x, ropeStart.y);
+    ctx.lineTo(mouse.x, mouse.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // rope length preview
+    let d = Math.hypot(mouse.x - ropeStart.x, mouse.y - ropeStart.y);
+    ctx.fillStyle = 'rgba(0,255,136,0.6)';
+    ctx.font = '9px Space Mono';
+    ctx.fillText(Math.round(d) + 'px', mouse.x + 8, mouse.y - 8);
+  }
+
+  // wall being drawn
+  if (tool === 'wall' && window._wallStart) {
+    ctx.strokeStyle = 'rgba(212,168,83,0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(window._wallStart.x, window._wallStart.y);
+    ctx.lineTo(mouse.x, mouse.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // anchors
+  for (let a of anchors) {
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    // outer glow ring
+    let pulse = Math.sin(time * 0.05 + a.id) * 0.3 + 0.7;
+    ctx.strokeStyle = `rgba(212,168,83,${pulse * 0.4})`;
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#D4A853';
+    ctx.beginPath();
+    ctx.arc(0, 0, a.radius + 5, 0, Math.PI * 2);
+    ctx.stroke();
+    // inner diamond
+    ctx.fillStyle = '#D4A853';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(0, -a.radius);
+    ctx.lineTo(a.radius, 0);
+    ctx.lineTo(0, a.radius);
+    ctx.lineTo(-a.radius, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // nodes
+  for (let n of nodes) {
+    if (n.pinned) continue;
+    ctx.save();
+    ctx.translate(n.x, n.y);
+    let pulse = Math.sin(time * 0.08 + n.id * 0.5) * 0.4 + 0.6;
+    ctx.strokeStyle = `rgba(0,255,136,${pulse})`;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#00ff88';
+    ctx.beginPath();
+    ctx.arc(0, 0, n.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,255,136,0.3)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // hovered
+  if (hovered && tool !== 'grab') {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.arc(hovered.x, hovered.y, hovered.radius + 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // vignette
+  let vig = ctx.createRadialGradient(W/2, H/2, H * 0.3, W/2, H/2, H * 0.9);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.5)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+
+  // scanlines
+  ctx.fillStyle = 'rgba(0,0,0,0.03)';
+  for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+
+  time++;
+}
+
+// === MAIN LOOP ===
+function loop() {
+  physics();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// Init with demo
+function spawnDemo() {
+  // Create a hanging chain
+  let startX = W * 0.4, startY = 60;
+  let prev = null;
+  for (let i = 0; i < 8; i++) {
+    let a = new Node(startX + i * ropeLen * 0.5, startY + i * ropeLen, i === 0);
+    if (i === 0) a.pinned = true;
+    anchors.push(a);
+    if (prev) ropes.push(new Rope(prev, a, ropeLen));
+    prev = a;
+  }
+  // Second chain
+  startX = W * 0.6;
+  prev = null;
+  let topAnchor = new Node(startX, 60, true);
+  anchors.push(topAnchor);
+  prev = topAnchor;
+  for (let i = 1; i < 6; i++) {
+    let a = new Node(startX + Math.sin(i * 0.5) * 30, 60 + i * ropeLen * 0.8, false);
+    nodes.push(a);
+    ropes.push(new Rope(prev, a, ropeLen * 0.8));
+    prev = a;
+  }
+  // Bridge between chains
+  let chain1 = anchors.filter(a => a.pinned);
+  let chain2Anchors = anchors.filter(a => a.pinned);
+  if (anchors.length >= 1) {
+    let bridgeA = anchors[0];
+    let bridgeB = anchors[Math.min(5, anchors.length - 1)];
+    if (bridgeA && bridgeB && bridgeA !== bridgeB) {
+      ropes.push(new Rope(bridgeA, bridgeB, ropeLen * 2));
+    }
+  }
+  updateStats();
+}
+
+spawnDemo();
+loop();
+</script>
+</body>
+</html>
